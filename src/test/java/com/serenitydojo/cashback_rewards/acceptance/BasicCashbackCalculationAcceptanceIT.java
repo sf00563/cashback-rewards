@@ -110,6 +110,41 @@ class BasicCashbackCalculationAcceptanceIT {
         }
     }
 
+    @Nested
+    @DisplayName("Must reject a purchase referencing an unknown merchant or customer")
+    class MustRejectAnUnknownMerchantOrCustomer {
+
+        @Test
+        @DisplayName("The one where the merchant ID doesn't exist -> rejected (404)")
+        void anUnknownMerchantIsRejected() throws Exception {
+            long customerId = createCustomer();
+            long unknownMerchantId = 999_999L;
+
+            mockMvc.perform(post("/purchases")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "customerId", customerId,
+                                    "merchantId", unknownMerchantId,
+                                    "amount", "100.00"))))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("The one where the customer ID doesn't exist -> rejected (404), distinct from an invalid amount (400)")
+        void anUnknownCustomerIsRejected() throws Exception {
+            long merchantId = createMerchant("5");
+            long unknownCustomerId = 999_999L;
+
+            mockMvc.perform(post("/purchases")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "customerId", unknownCustomerId,
+                                    "merchantId", merchantId,
+                                    "amount", "100.00"))))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
     private long createCustomer() throws Exception {
         MvcResult result = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
