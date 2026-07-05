@@ -75,6 +75,41 @@ class BasicCashbackCalculationAcceptanceIT {
         }
     }
 
+    @Nested
+    @DisplayName("Must reject a purchase with a non-positive amount")
+    class MustRejectANonPositiveAmount {
+
+        @Test
+        @DisplayName("The one where the purchase amount is 0.00 -> rejected (400)")
+        void aZeroAmountIsRejected() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+
+            mockMvc.perform(post("/purchases")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "customerId", customerId,
+                                    "merchantId", merchantId,
+                                    "amount", "0.00"))))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("The one where the purchase amount is negative -> rejected (400)")
+        void aNegativeAmountIsRejected() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+
+            mockMvc.perform(post("/purchases")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "customerId", customerId,
+                                    "merchantId", merchantId,
+                                    "amount", "-10.00"))))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
     private long createCustomer() throws Exception {
         MvcResult result = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)

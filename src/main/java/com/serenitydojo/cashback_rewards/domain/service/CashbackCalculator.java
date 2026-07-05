@@ -1,5 +1,6 @@
 package com.serenitydojo.cashback_rewards.domain.service;
 
+import com.serenitydojo.cashback_rewards.domain.exception.InvalidPurchaseAmountException;
 import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 
 import java.math.BigDecimal;
@@ -11,6 +12,9 @@ public class CashbackCalculator {
     private static final BigDecimal HUNDRED = BigDecimal.valueOf(100);
 
     public BigDecimal cashbackFor(CashbackRate rate, BigDecimal purchaseAmount) {
+        if (purchaseAmount == null || purchaseAmount.signum() <= 0) {
+            throw new InvalidPurchaseAmountException("Purchase amount must be positive");
+        }
         return purchaseAmount.multiply(rate.percentage())
                 .divide(HUNDRED, MONEY_SCALE, RoundingMode.DOWN);
     }
