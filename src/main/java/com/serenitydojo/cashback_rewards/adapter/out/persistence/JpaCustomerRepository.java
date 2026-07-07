@@ -4,6 +4,7 @@ import com.serenitydojo.cashback_rewards.application.port.out.CustomerRepository
 import com.serenitydojo.cashback_rewards.domain.model.Customer;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Component
@@ -18,6 +19,14 @@ class JpaCustomerRepository implements CustomerRepository {
     @Override
     public long save(Customer customer) {
         return customers.save(new CustomerEntity(customer.balance())).getId();
+    }
+
+    @Override
+    public void updateBalance(long id, BigDecimal balance) {
+        CustomerEntity entity = customers.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown customer: " + id));
+        entity.setBalance(balance);
+        customers.save(entity);
     }
 
     @Override

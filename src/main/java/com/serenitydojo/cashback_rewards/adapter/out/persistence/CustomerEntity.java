@@ -34,4 +34,8 @@ class CustomerEntity {
     BigDecimal getBalance() {
         return balance;
     }
+
+    void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
 }

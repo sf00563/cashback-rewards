@@ -35,4 +35,23 @@ class JpaCustomerRepositoryTest {
         assertThat(found).isPresent();
         assertThat(found.get().balance()).isEqualByComparingTo("10.00");
     }
+
+    @Test
+    @DisplayName("The one where updating a customer's balance changes the stored value in place, without inserting a new row")
+    void updatesTheBalanceOfAnExistingCustomer() {
+        Long id = entityManager.persistFlushFind(new CustomerEntity(new BigDecimal("10.00"))).getId();
+
+        customers.updateBalance(id, new BigDecimal("15.00"));
+        entityManager.flush();
+        entityManager.clear();
+
+        Optional<Customer> updated = customers.findById(id);
+        assertThat(updated).isPresent();
+        assertThat(updated.get().balance()).isEqualByComparingTo("15.00");
+
+        Long rowCount = entityManager.getEntityManager()
+                .createQuery("select count(c) from CustomerEntity c", Long.class)
+                .getSingleResult();
+        assertThat(rowCount).isEqualTo(1L);
+    }
 }

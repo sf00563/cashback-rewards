@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Map;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -72,6 +73,48 @@ class BasicCashbackCalculationAcceptanceIT {
                                     "amount", "100.00"))))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.cashback").value("0.00"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Should credit the calculated cashback to the customer's running rewards balance")
+    class ShouldCreditCashbackToTheRunningBalance {
+
+        @Test
+        @DisplayName("The one where a customer with a 10.00 balance earns 5.00 and ends at 15.00")
+        void earnedCashbackIsAddedToTheExistingBalance() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+
+            purchase(customerId, merchantId, "200.00"); // earns 10.00 -> balance 10.00
+            purchase(customerId, merchantId, "100.00"); // earns 5.00 -> balance 15.00
+
+            mockMvc.perform(get("/customers/{id}", customerId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value("15.00"));
+        }
+
+        @Test
+        @DisplayName("The one where cashback rounds to 0.00 -> balance is unchanged")
+        void cashbackThatRoundsToZeroLeavesTheBalanceUnchanged() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+
+            purchase(customerId, merchantId, "200.00"); // earns 10.00 -> balance 10.00
+            purchase(customerId, merchantId, "0.01"); // earns 0.00 -> balance unchanged
+
+            mockMvc.perform(get("/customers/{id}", customerId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value("10.00"));
+        }
+
+        @Test
+        @DisplayName("The one where querying an unknown customer ID is rejected (404)")
+        void queryingAnUnknownCustomerIsRejected() throws Exception {
+            long unknownCustomerId = 999_999L;
+
+            mockMvc.perform(get("/customers/{id}", unknownCustomerId))
+                    .andExpect(status().isNotFound());
         }
     }
 
@@ -161,6 +204,16 @@ class BasicCashbackCalculationAcceptanceIT {
                 .andExpect(status().isCreated())
                 .andReturn();
         return idOf(result);
+    }
+
+    private void purchase(long customerId, long merchantId, String amount) throws Exception {
+        mockMvc.perform(post("/purchases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "customerId", customerId,
+                                "merchantId", merchantId,
+                                "amount", amount))))
+                .andExpect(status().isCreated());
     }
 
     private long idOf(MvcResult result) throws Exception {

@@ -18,7 +18,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Recording a purchase")
@@ -43,6 +46,22 @@ class RecordPurchaseServiceTest {
         BigDecimal cashback = service.recordPurchase(7L, 42L, new BigDecimal("100.00"));
 
         assertThat(cashback).isEqualByComparingTo("5.00");
+    }
+
+    @Test
+    @DisplayName("The one where the earned cashback is credited to the customer's running balance")
+    void creditsEarnedCashbackToTheCustomersRunningBalance() {
+        given(customers.findById(7L))
+                .willReturn(Optional.of(new Customer(new BigDecimal("10.00"))));
+        given(merchants.findById(42L))
+                .willReturn(Optional.of(new Merchant(new CashbackRate(new BigDecimal("5")))));
+
+        RecordPurchaseService service = new RecordPurchaseService(customers, merchants);
+
+        service.recordPurchase(7L, 42L, new BigDecimal("100.00")); // earns 5.00
+
+        verify(customers).updateBalance(eq(7L),
+                argThat(balance -> balance.compareTo(new BigDecimal("15.00")) == 0));
     }
 
     @Test
