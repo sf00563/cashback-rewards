@@ -188,10 +188,84 @@ class BasicCashbackCalculationAcceptanceIT {
         }
     }
 
+    @Nested
+    @DisplayName("Should reverse cashback from the customer's balance when a purchase is refunded")
+    class ShouldReverseCashbackWhenAPurchaseIsRefunded {
+
+        @Test
+        @DisplayName("The one where a customer earned 5.00 (balance 5.00), the purchase is fully refunded, and the balance returns to 0.00")
+        void aFullRefundReversesAllCashback() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+            long purchaseId = purchaseReturningId(customerId, merchantId, "100.00"); // earns 5.00 -> balance 5.00
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", purchaseId,
+                                    "amount", "100.00"))))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.cashbackReversed").value("5.00"));
+
+            mockMvc.perform(get("/customers/{id}", customerId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value("0.00"));
+        }
+
+        @Test
+        @DisplayName("The one where a 100.00 purchase at 5% is partially refunded 40.00 -> cashback reversed is 2.00")
+        void aPartialRefundReversesCashbackProportionally() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+            long purchaseId = purchaseReturningId(customerId, merchantId, "100.00"); // earns 5.00 -> balance 5.00
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", purchaseId,
+                                    "amount", "40.00"))))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.cashbackReversed").value("2.00"));
+
+            mockMvc.perform(get("/customers/{id}", customerId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value("3.00"));
+        }
+
+        @Test
+        @DisplayName("The one where the customer already redeemed the cashback (balance 1.00 < 5.00 to reverse) → balance clamps at 0.00, not negative")
+        void aRefundReversesCashbackToClamp() throws Exception {
+            long customerId = createCustomerWithBalance("1");
+            long merchantId = createMerchant("5");
+            long purchaseId = purchaseReturningId(customerId, merchantId, "100.00");
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", purchaseId,
+                                    "amount", "40.00"))))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.cashbackReversed").value("2.00"));
+
+            mockMvc.perform(get("/customers/{id}", customerId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.balance").value("0.00"));
+        }
+    }
+
     private long createCustomer() throws Exception {
         MvcResult result = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return idOf(result);
+    }
+
+    private long createCustomerWithBalance(String balance) throws Exception {
+        MvcResult result = mockMvc.perform(post("/customers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("balance", balance))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return idOf(result);
@@ -214,6 +288,18 @@ class BasicCashbackCalculationAcceptanceIT {
                                 "merchantId", merchantId,
                                 "amount", amount))))
                 .andExpect(status().isCreated());
+    }
+
+    private long purchaseReturningId(long customerId, long merchantId, String amount) throws Exception {
+        MvcResult result = mockMvc.perform(post("/purchases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "customerId", customerId,
+                                "merchantId", merchantId,
+                                "amount", amount))))
+                .andExpect(status().isCreated())
+                .andReturn();
+        return idOf(result);
     }
 
     private long idOf(MvcResult result) throws Exception {
