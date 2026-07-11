@@ -9,8 +9,10 @@ import com.serenitydojo.cashback_rewards.domain.model.Customer;
 import com.serenitydojo.cashback_rewards.domain.model.Purchase;
 import com.serenitydojo.cashback_rewards.domain.service.CashbackCalculator;
 import com.serenitydojo.cashback_rewards.domain.service.CashbackRefunder;
+import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
+@Service
 public class RefundPurchaseService implements RefundPurchaseUseCase {
     private final CustomerRepository customerRepository;
     private final PurchaseRepository purchaseRepository;
@@ -26,17 +28,17 @@ public class RefundPurchaseService implements RefundPurchaseUseCase {
     }
 
     @Override
-    public BigDecimal refundPurchase(long customerId, long purchaseId, BigDecimal refundAmount) {
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new UnknownCustomerException("Unknown customer: " + customerId));
+    public BigDecimal refundPurchase(long purchaseId, BigDecimal refundAmount) {
         Purchase purchase = purchaseRepository.findById(purchaseId)
                 .orElseThrow(() -> new UnknownPurchaseException("Unknown purchase: " + purchaseId));
+        Customer customer = customerRepository.findById(purchase.customerId())
+                .orElseThrow(() -> new UnknownCustomerException("Unknown customer: " + purchase.customerId()));
 
         BigDecimal customerCurrentBalance = customer.balance();
         BigDecimal refundedCashback = cashbackCalculator.cashbackFor(purchase.cashbackRate(), refundAmount);
         BigDecimal newBalance = cashbackRefunder.refund(customerCurrentBalance, refundedCashback);
-        customerRepository.updateBalance(customerId, newBalance);
+        customerRepository.updateBalance(purchase.customerId(), newBalance);
 
-        return newBalance;
+        return refundedCashback;
     }
 }

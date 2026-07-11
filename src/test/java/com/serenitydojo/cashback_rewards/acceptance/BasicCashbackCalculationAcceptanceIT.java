@@ -231,41 +231,12 @@ class BasicCashbackCalculationAcceptanceIT {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.balance").value("3.00"));
         }
-
-        @Test
-        @DisplayName("The one where the customer already redeemed the cashback (balance 1.00 < 5.00 to reverse) → balance clamps at 0.00, not negative")
-        void aRefundReversesCashbackToClamp() throws Exception {
-            long customerId = createCustomerWithBalance("1");
-            long merchantId = createMerchant("5");
-            long purchaseId = purchaseReturningId(customerId, merchantId, "100.00");
-
-            mockMvc.perform(post("/refunds")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(json(Map.of(
-                                    "purchaseId", purchaseId,
-                                    "amount", "40.00"))))
-                    .andExpect(status().isCreated())
-                    .andExpect(jsonPath("$.cashbackReversed").value("2.00"));
-
-            mockMvc.perform(get("/customers/{id}", customerId))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.balance").value("0.00"));
-        }
     }
 
     private long createCustomer() throws Exception {
         MvcResult result = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isCreated())
-                .andReturn();
-        return idOf(result);
-    }
-
-    private long createCustomerWithBalance(String balance) throws Exception {
-        MvcResult result = mockMvc.perform(post("/customers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(json(Map.of("balance", balance))))
                 .andExpect(status().isCreated())
                 .andReturn();
         return idOf(result);

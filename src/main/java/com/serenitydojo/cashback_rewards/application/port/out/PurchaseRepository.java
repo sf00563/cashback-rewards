@@ -6,4 +6,5 @@ import java.util.Optional;
 
 public interface PurchaseRepository {
     Optional<Purchase> findById(long id);
+    long save(Purchase purchase);
 }

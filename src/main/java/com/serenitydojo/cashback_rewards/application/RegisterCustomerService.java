@@ -1,5 +1,6 @@
 package com.serenitydojo.cashback_rewards.application;
 
+import com.serenitydojo.cashback_rewards.application.port.in.RegisterCustomerUseCase;
 import com.serenitydojo.cashback_rewards.application.port.out.CustomerRepository;
 import com.serenitydojo.cashback_rewards.domain.model.Customer;
 import org.springframework.stereotype.Service;
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 
 @Service
-public class RegisterCustomerService {
+public class RegisterCustomerService implements RegisterCustomerUseCase {
 
     private static final BigDecimal ZERO_BALANCE = new BigDecimal("0.00");
 

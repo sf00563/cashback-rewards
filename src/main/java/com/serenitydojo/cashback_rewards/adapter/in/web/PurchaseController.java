@@ -1,7 +1,8 @@
 package com.serenitydojo.cashback_rewards.adapter.in.web;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.serenitydojo.cashback_rewards.application.RecordPurchaseService;
+import com.serenitydojo.cashback_rewards.application.port.in.PurchaseReceipt;
+import com.serenitydojo.cashback_rewards.application.port.in.RecordPurchaseUseCase;
 import com.serenitydojo.cashback_rewards.domain.exception.InvalidPurchaseAmountException;
 import com.serenitydojo.cashback_rewards.domain.exception.UnknownCustomerException;
 import com.serenitydojo.cashback_rewards.domain.exception.UnknownMerchantException;
@@ -19,17 +20,17 @@ import java.math.BigDecimal;
 @RequestMapping("/purchases")
 class PurchaseController {
 
-    private final RecordPurchaseService recordPurchaseService;
+    private final RecordPurchaseUseCase recordPurchaseUseCase;
 
-    PurchaseController(RecordPurchaseService recordPurchaseService) {
-        this.recordPurchaseService = recordPurchaseService;
+    PurchaseController(RecordPurchaseUseCase recordPurchaseUseCase) {
+        this.recordPurchaseUseCase = recordPurchaseUseCase;
     }
 
     @PostMapping
     ResponseEntity<PurchaseResponse> record(@RequestBody PurchaseRequest request) {
-        BigDecimal cashback = recordPurchaseService.recordPurchase(
+        PurchaseReceipt purchaseReceipt = recordPurchaseUseCase.recordPurchase(
                 request.customerId(), request.merchantId(), request.amount());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new PurchaseResponse(cashback));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new PurchaseResponse(purchaseReceipt.cashback(), purchaseReceipt.purchaseId()));
     }
 
     @ExceptionHandler(InvalidPurchaseAmountException.class)
@@ -45,6 +46,6 @@ class PurchaseController {
     record PurchaseRequest(long customerId, long merchantId, BigDecimal amount) {
     }
 
-    record PurchaseResponse(@JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal cashback) {
+    record PurchaseResponse(@JsonFormat(shape = JsonFormat.Shape.STRING) BigDecimal cashback, long id) {
     }
 }

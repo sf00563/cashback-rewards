@@ -51,6 +51,8 @@
 
 - Example: The one where a customer earned 5.00 (balance 5.00), the purchase is fully refunded, and the balance returns to 0.00.
 - Counter-example: The one where the customer already redeemed the cashback (balance 1.00 < 5.00 to reverse) → balance clamps at 0.00, not negative.
+  - **Deferred at acceptance level — blocked on a redemption rule.** The precondition (balance below the cashback owed) is unreachable through the current API: balance is `sum(credited) − sum(reversed)`, each reversal is proportional and capped by the "cumulative refunds ≤ original amount" rule, and because rounding is DOWN, split refunds cannot over-reverse (`floor(a) + floor(b) ≤ floor(a+b)`). The balance can only fall below the cashback owed once a customer can *spend* it.
+  - The clamp itself is covered today as a domain invariant in `CashbackRefundTest` (`1.00 − 3.00 → 0.00`). Re-add the acceptance example once redemption exists: earn 5.00 → redeem 4.00 → refund the purchase → balance clamps at 0.00.
 
 ### Rule: Must reject an invalid refund.
 

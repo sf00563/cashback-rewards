@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -36,12 +37,13 @@ public class RefundPurchaseServiceTest {
         given(customers.findById(7L))
                 .willReturn(Optional.of(new Customer(new BigDecimal("10.00"))));
         given(purchases.findById(20L))
-                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")))));
+                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L)));
 
         RefundPurchaseService service = new RefundPurchaseService(customers, purchases);
 
-        service.refundPurchase(7L, 20L, new BigDecimal("40.00"));
+        BigDecimal refundedCashback = service.refundPurchase(20L, new BigDecimal("40.00"));
 
+        assertThat(refundedCashback).isEqualByComparingTo("2.00");
         verify(customers).updateBalance(eq(7L),
                 argThat(balance -> balance.compareTo(new BigDecimal("8.00")) == 0));
     }
@@ -49,26 +51,26 @@ public class RefundPurchaseServiceTest {
     @Test
     @DisplayName("The one where a customer id is not valid so cashback refunded is aborted")
     void rejectsRefundForUnknownCustomer() {
+        given(purchases.findById(20L))
+                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L)));
         given(customers.findById(7L))
                 .willReturn(Optional.empty());
 
         RefundPurchaseService service = new RefundPurchaseService(customers, purchases);
 
-        assertThatThrownBy(() -> service.refundPurchase(7L, 20L, new BigDecimal("40.00")))
+        assertThatThrownBy(() -> service.refundPurchase(20L, new BigDecimal("40.00")))
                 .isInstanceOf(UnknownCustomerException.class);
     }
 
     @Test
     @DisplayName("The one where a purchased id is not valid so cashback refunded is aborted")
     void rejectsRefundForUnknownPurchase() {
-        given(customers.findById(7L))
-                .willReturn(Optional.of(new Customer(new BigDecimal("10.00"))));
         given(purchases.findById(20L))
                 .willReturn(Optional.empty());
 
         RefundPurchaseService service = new RefundPurchaseService(customers, purchases);
 
-        assertThatThrownBy(() -> service.refundPurchase(7L, 20L, new BigDecimal("40.00")))
+        assertThatThrownBy(() -> service.refundPurchase(20L, new BigDecimal("40.00")))
                 .isInstanceOf(UnknownPurchaseException.class);
     }
 }

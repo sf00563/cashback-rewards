@@ -1,6 +1,6 @@
 package com.serenitydojo.cashback_rewards.adapter.in.web;
 
-import com.serenitydojo.cashback_rewards.application.RegisterMerchantService;
+import com.serenitydojo.cashback_rewards.application.port.in.RegisterMerchantUseCase;
 import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,15 +15,15 @@ import java.math.BigDecimal;
 @RequestMapping("/merchants")
 class MerchantController {
 
-    private final RegisterMerchantService registerMerchantService;
+    private final RegisterMerchantUseCase registerMerchant;
 
-    MerchantController(RegisterMerchantService registerMerchantService) {
-        this.registerMerchantService = registerMerchantService;
+    MerchantController(RegisterMerchantUseCase registerMerchant) {
+        this.registerMerchant = registerMerchant;
     }
 
     @PostMapping
     ResponseEntity<IdResponse> create(@RequestBody CreateMerchantRequest request) {
-        long id = registerMerchantService.register(new CashbackRate(request.cashbackRate()));
+        long id = registerMerchant.register(new CashbackRate(request.cashbackRate()));
         return ResponseEntity.status(HttpStatus.CREATED).body(new IdResponse(id));
     }
 

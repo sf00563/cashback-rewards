@@ -1,12 +1,13 @@
 package com.serenitydojo.cashback_rewards.application;
 
+import com.serenitydojo.cashback_rewards.application.port.in.RegisterMerchantUseCase;
 import com.serenitydojo.cashback_rewards.application.port.out.MerchantRepository;
 import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 import com.serenitydojo.cashback_rewards.domain.model.Merchant;
 import org.springframework.stereotype.Service;
 
 @Service
-public class RegisterMerchantService {
+public class RegisterMerchantService implements RegisterMerchantUseCase {
 
     private final MerchantRepository merchants;
 

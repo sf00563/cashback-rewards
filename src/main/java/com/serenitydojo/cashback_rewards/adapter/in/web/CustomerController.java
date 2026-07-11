@@ -1,8 +1,8 @@
 package com.serenitydojo.cashback_rewards.adapter.in.web;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.serenitydojo.cashback_rewards.application.RegisterCustomerService;
 import com.serenitydojo.cashback_rewards.application.port.in.GetCustomerBalanceUseCase;
+import com.serenitydojo.cashback_rewards.application.port.in.RegisterCustomerUseCase;
 import com.serenitydojo.cashback_rewards.domain.exception.UnknownCustomerException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +19,18 @@ import java.math.BigDecimal;
 @RequestMapping("/customers")
 class CustomerController {
 
-    private final RegisterCustomerService registerCustomerService;
+    private final RegisterCustomerUseCase registerCustomer;
     private final GetCustomerBalanceUseCase getCustomerBalance;
 
-    CustomerController(RegisterCustomerService registerCustomerService,
+    CustomerController(RegisterCustomerUseCase registerCustomer,
                        GetCustomerBalanceUseCase getCustomerBalance) {
-        this.registerCustomerService = registerCustomerService;
+        this.registerCustomer = registerCustomer;
         this.getCustomerBalance = getCustomerBalance;
     }
 
     @PostMapping
     ResponseEntity<IdResponse> create() {
-        long id = registerCustomerService.register();
+        long id = registerCustomer.register();
         return ResponseEntity.status(HttpStatus.CREATED).body(new IdResponse(id));
     }
 
