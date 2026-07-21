@@ -69,7 +69,7 @@ class RecordPurchaseServiceTest {
         PurchaseReceipt receipt = service.recordPurchase(7L, 42L, new BigDecimal("100.00"));
 
         assertThat(receipt.purchaseId()).isEqualTo(99L);
-        verify(purchases).save(new Purchase(new CashbackRate(new BigDecimal("5")), 7L));
+        verify(purchases).save(new Purchase(new CashbackRate(new BigDecimal("5")), 7L, new BigDecimal("100.00"), new BigDecimal("0")));
     }
 
     @Test

@@ -28,12 +28,25 @@ public class JpaPurchaseRepositoryTest {
     @Test
     @DisplayName("The one where a saved purchase is found by id carrying its cashback rate and customer id")
     void findsASavedPurchaseByIdWithItsCashbackRateAndCustomerId() {
-        Long id = entityManager.persistFlushFind(new PurchaseEntity(new BigDecimal("5.00"), 20L)).getId();
+        Long id = entityManager.persistFlushFind(new PurchaseEntity(new BigDecimal("5.00"), 20L, new BigDecimal("100.00"), new BigDecimal("0"))).getId();
 
         Optional<Purchase> found = purchases.findById(id);
 
         assertThat(found).isPresent();
         assertThat(found.get().cashbackRate().percentage()).isEqualByComparingTo("5");
         assertThat(found.get().customerId()).isEqualTo(20L);
+    }
+
+    @Test
+    @DisplayName("The one where a purchase with the new total refunded is updated")
+    void updatePurchaseWithNewRefundTotal() {
+        Long id = entityManager.persistFlushFind(new PurchaseEntity(new BigDecimal("5.00"), 20L, new BigDecimal("100.00"), new BigDecimal("0"))).getId();
+
+        Purchase found = purchases.findById(id).orElseThrow();
+        purchases.save(new Purchase(id, found.cashbackRate(), found.customerId(), found.purchaseAmount(), new BigDecimal("40")));
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(purchases.findById(id).orElseThrow().totalRefunded()).isEqualByComparingTo("40.00");
     }
 }

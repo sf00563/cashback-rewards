@@ -42,7 +42,7 @@ public class RecordPurchaseService implements RecordPurchaseUseCase {
 
         BigDecimal cashback = calculator.cashbackFor(merchant.cashbackRate(), amount);
         BigDecimal newBalance = creditor.credit(customer.balance(), cashback);
-        long purchaseId = purchases.save(new Purchase(new CashbackRate(merchant.cashbackRate().percentage()), customerId));
+        long purchaseId = purchases.save(new Purchase(new CashbackRate(merchant.cashbackRate().percentage()), customerId, amount, new BigDecimal("0")));
         customers.updateBalance(customerId, newBalance);
 
         return new PurchaseReceipt(purchaseId, cashback);

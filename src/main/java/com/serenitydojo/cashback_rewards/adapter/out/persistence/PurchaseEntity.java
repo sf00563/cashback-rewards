@@ -18,12 +18,25 @@ class PurchaseEntity {
     @Column(nullable = false)
     private Long customerId;
 
+    @Column(nullable = false)
+    private BigDecimal purchaseAmount;
+
+    @Column(nullable = false)
+    private BigDecimal totalRefunded;
+
     protected PurchaseEntity() {
     }
 
-    public PurchaseEntity(BigDecimal cashbackRate, Long customerId) {
+    public PurchaseEntity(BigDecimal cashbackRate, Long customerId, BigDecimal purchaseAmount, BigDecimal totalRefunded) {
+        this(null, cashbackRate, customerId, purchaseAmount, totalRefunded);
+    }
+
+    public PurchaseEntity(Long id, BigDecimal cashbackRate, Long customerId, BigDecimal purchaseAmount, BigDecimal totalRefunded) {
+        this.id = id;
         this.cashbackRate = cashbackRate;
         this.customerId = customerId;
+        this.purchaseAmount = purchaseAmount;
+        this.totalRefunded = totalRefunded;
     }
 
     public Long getId() {
@@ -36,5 +49,13 @@ class PurchaseEntity {
 
     public Long getCustomerId() {
         return customerId;
+    }
+
+    public BigDecimal getPurchaseAmount() {
+        return purchaseAmount;
+    }
+
+    public BigDecimal getTotalRefunded() {
+        return totalRefunded;
     }
 }

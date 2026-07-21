@@ -19,11 +19,16 @@ public class JpaPurchaseRepository implements PurchaseRepository {
     @Override
     public Optional<Purchase> findById(long id) {
         return repository.findById(id)
-                .map(entity -> new Purchase(new CashbackRate(entity.getCashbackRate()), entity.getCustomerId()));
+                .map(entity -> new Purchase(entity.getId(), new CashbackRate(entity.getCashbackRate()), entity.getCustomerId(), entity.getPurchaseAmount(), entity.getTotalRefunded()));
     }
 
     @Override
     public long save(Purchase purchase) {
-        return repository.save(new PurchaseEntity(purchase.cashbackRate().percentage(), purchase.customerId())).getId();
+        return repository.save(new PurchaseEntity(
+                purchase.purchaseId(),
+                purchase.cashbackRate().percentage(),
+                purchase.customerId(),
+                purchase.purchaseAmount(),
+                purchase.totalRefunded())).getId();
     }
 }

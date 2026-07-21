@@ -233,6 +233,46 @@ class BasicCashbackCalculationAcceptanceIT {
         }
     }
 
+    @Nested
+    @DisplayName("Must reject an invalid refund")
+    class MustRejectAnInvalidRefund {
+
+        @Test
+        @DisplayName("The one where the refund references an unknown purchase -> rejected (404)")
+        void aRefundForAnUnknownPurchaseIsRejected() throws Exception {
+            long unknownPurchaseId = 999_999L;
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", unknownPurchaseId,
+                                    "amount", "100.00"))))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("The one where cumulative refunds would exceed the original purchase amount -> rejected (409)")
+        void refundsExceedingTheOriginalPurchaseAmountAreRejected() throws Exception {
+            long customerId = createCustomer();
+            long merchantId = createMerchant("5");
+            long purchaseId = purchaseReturningId(customerId, merchantId, "100.00");
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", purchaseId,
+                                    "amount", "60.00"))))
+                    .andExpect(status().isCreated());
+
+            mockMvc.perform(post("/refunds")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json(Map.of(
+                                    "purchaseId", purchaseId,
+                                    "amount", "60.00"))))
+                    .andExpect(status().isConflict());
+        }
+    }
+
     private long createCustomer() throws Exception {
         MvcResult result = mockMvc.perform(post("/customers")
                         .contentType(MediaType.APPLICATION_JSON)

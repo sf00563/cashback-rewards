@@ -1,5 +1,6 @@
 package com.serenitydojo.cashback_rewards.application;
 
+import com.serenitydojo.cashback_rewards.application.port.in.RefundReceipt;
 import com.serenitydojo.cashback_rewards.application.port.out.CustomerRepository;
 import com.serenitydojo.cashback_rewards.application.port.out.PurchaseRepository;
 import com.serenitydojo.cashback_rewards.domain.exception.UnknownCustomerException;
@@ -37,22 +38,38 @@ public class RefundPurchaseServiceTest {
         given(customers.findById(7L))
                 .willReturn(Optional.of(new Customer(new BigDecimal("10.00"))));
         given(purchases.findById(20L))
-                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L)));
+                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L, new BigDecimal("100.00"), new BigDecimal("0"))));
 
         RefundPurchaseService service = new RefundPurchaseService(customers, purchases);
 
-        BigDecimal refundedCashback = service.refundPurchase(20L, new BigDecimal("40.00"));
+        RefundReceipt refundedReceipt = service.refundPurchase(20L, new BigDecimal("40.00"));
 
-        assertThat(refundedCashback).isEqualByComparingTo("2.00");
+        assertThat(refundedReceipt.totalCashbackRefunded()).isEqualByComparingTo("2.00");
         verify(customers).updateBalance(eq(7L),
                 argThat(balance -> balance.compareTo(new BigDecimal("8.00")) == 0));
+    }
+
+    @Test
+    @DisplayName("The one where the purchase is refunded and so the customer's refund total is increased")
+    void refundTotalOnPurchaseIncreases() {
+        given(customers.findById(7L))
+                .willReturn(Optional.of(new Customer(new BigDecimal("10.00"))));
+        given(purchases.findById(20L))
+                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L, new BigDecimal("100.00"), new BigDecimal("0"))));
+
+        RefundPurchaseService service = new RefundPurchaseService(customers, purchases);
+
+        RefundReceipt refundedReceipt = service.refundPurchase(20L, new BigDecimal("40.00"));
+        assertThat(refundedReceipt.totalRefunded()).isEqualByComparingTo("40.00");
+        verify(purchases).save(
+                argThat(purchase -> purchase.totalRefunded().compareTo(new BigDecimal("40.00")) == 0));
     }
 
     @Test
     @DisplayName("The one where a customer id is not valid so cashback refunded is aborted")
     void rejectsRefundForUnknownCustomer() {
         given(purchases.findById(20L))
-                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L)));
+                .willReturn(Optional.of(new Purchase(new CashbackRate(new BigDecimal("5.00")), 7L, new BigDecimal("100.00"), new BigDecimal("0"))));
         given(customers.findById(7L))
                 .willReturn(Optional.empty());
 
