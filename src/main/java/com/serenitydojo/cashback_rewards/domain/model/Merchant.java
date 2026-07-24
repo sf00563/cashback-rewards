@@ -1,4 +1,4 @@
 package com.serenitydojo.cashback_rewards.domain.model;
 
-public record Merchant(CashbackRate cashbackRate) {
+public record Merchant(boolean partner) {
 }

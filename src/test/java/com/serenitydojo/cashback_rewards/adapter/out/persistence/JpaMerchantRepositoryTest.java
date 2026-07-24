@@ -9,7 +9,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,13 +25,13 @@ class JpaMerchantRepositoryTest {
     private TestEntityManager entityManager;
 
     @Test
-    @DisplayName("The one where a saved merchant is found by id carrying its cashback rate")
-    void findsASavedMerchantByIdWithItsCashbackRate() {
-        Long id = entityManager.persistFlushFind(new MerchantEntity(new BigDecimal("5"))).getId();
+    @DisplayName("The one where a saved merchant is found by id carrying its partner status")
+    void findsASavedMerchantByIdWithItsPartnerStatus() {
+        Long id = entityManager.persistFlushFind(new MerchantEntity(true)).getId();
 
         Optional<Merchant> found = merchants.findById(id);
 
         assertThat(found).isPresent();
-        assertThat(found.get().cashbackRate().percentage()).isEqualByComparingTo("5");
+        assertThat(found.get().partner()).isTrue();
     }
 }

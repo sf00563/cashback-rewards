@@ -1,7 +1,6 @@
 package com.serenitydojo.cashback_rewards.adapter.out.persistence;
 
 import com.serenitydojo.cashback_rewards.application.port.out.MerchantRepository;
-import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 import com.serenitydojo.cashback_rewards.domain.model.Merchant;
 import org.springframework.stereotype.Component;
 
@@ -18,12 +17,12 @@ class JpaMerchantRepository implements MerchantRepository {
 
     @Override
     public long save(Merchant merchant) {
-        return merchants.save(new MerchantEntity(merchant.cashbackRate().percentage())).getId();
+        return merchants.save(new MerchantEntity(merchant.partner())).getId();
     }
 
     @Override
     public Optional<Merchant> findById(long id) {
         return merchants.findById(id)
-                .map(entity -> new Merchant(new CashbackRate(entity.getCashbackRate())));
+                .map(entity -> new Merchant(entity.isPartner()));
     }
 }

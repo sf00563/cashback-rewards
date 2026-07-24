@@ -11,8 +11,11 @@ import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 import com.serenitydojo.cashback_rewards.domain.model.Customer;
 import com.serenitydojo.cashback_rewards.domain.model.Merchant;
 import com.serenitydojo.cashback_rewards.domain.model.Purchase;
+import com.serenitydojo.cashback_rewards.domain.model.TransactionDetails;
 import com.serenitydojo.cashback_rewards.domain.service.CashbackCalculator;
 import com.serenitydojo.cashback_rewards.domain.service.CashbackCreditor;
+import com.serenitydojo.cashback_rewards.domain.service.CashbackRateResolver;
+import com.serenitydojo.cashback_rewards.domain.service.PurchaseVerifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +27,10 @@ public class RecordPurchaseService implements RecordPurchaseUseCase {
     private final CustomerRepository customers;
     private final MerchantRepository merchants;
     private final PurchaseRepository purchases;
+    private final CashbackRateResolver rateResolver = new CashbackRateResolver();
     private final CashbackCalculator calculator = new CashbackCalculator();
     private final CashbackCreditor creditor = new CashbackCreditor();
+    private final PurchaseVerifier purchaseVerifier = new PurchaseVerifier();
 
     public RecordPurchaseService(CustomerRepository customers, MerchantRepository merchants, PurchaseRepository purchases) {
         this.customers = customers;
@@ -34,15 +39,17 @@ public class RecordPurchaseService implements RecordPurchaseUseCase {
     }
 
     @Transactional
-    public PurchaseReceipt recordPurchase(long customerId, long merchantId, BigDecimal amount) {
+    public PurchaseReceipt recordPurchase(long customerId, long merchantId, BigDecimal amount, int mcc, TransactionDetails transactionDetails) {
         Merchant merchant = merchants.findById(merchantId)
                 .orElseThrow(() -> new UnknownMerchantException("Unknown merchant: " + merchantId));
         Customer customer = customers.findById(customerId)
                 .orElseThrow(() -> new UnknownCustomerException("Unknown customer: " + customerId));
 
-        BigDecimal cashback = calculator.cashbackFor(merchant.cashbackRate(), amount);
+        purchaseVerifier.verify(transactionDetails.transactionType(), transactionDetails.transactionStatus(), transactionDetails.cardState());
+        CashbackRate rate = rateResolver.rateFor(merchant.partner(), mcc);
+        BigDecimal cashback = calculator.cashbackFor(rate, amount);
         BigDecimal newBalance = creditor.credit(customer.balance(), cashback);
-        long purchaseId = purchases.save(new Purchase(new CashbackRate(merchant.cashbackRate().percentage()), customerId, amount, new BigDecimal("0")));
+        long purchaseId = purchases.save(new Purchase(rate, customerId, amount, new BigDecimal("0")));
         customers.updateBalance(customerId, newBalance);
 
         return new PurchaseReceipt(purchaseId, cashback);

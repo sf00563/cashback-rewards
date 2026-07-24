@@ -7,8 +7,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "merchants")
 class MerchantEntity {
@@ -18,20 +16,20 @@ class MerchantEntity {
     private Long id;
 
     @Column(nullable = false)
-    private BigDecimal cashbackRate;
+    private boolean partner;
 
     protected MerchantEntity() {
     }
 
-    MerchantEntity(BigDecimal cashbackRate) {
-        this.cashbackRate = cashbackRate;
+    MerchantEntity(boolean partner) {
+        this.partner = partner;
     }
 
     Long getId() {
         return id;
     }
 
-    BigDecimal getCashbackRate() {
-        return cashbackRate;
+    boolean isPartner() {
+        return partner;
     }
 }

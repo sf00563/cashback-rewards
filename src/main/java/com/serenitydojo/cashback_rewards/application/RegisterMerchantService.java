@@ -2,7 +2,6 @@ package com.serenitydojo.cashback_rewards.application;
 
 import com.serenitydojo.cashback_rewards.application.port.in.RegisterMerchantUseCase;
 import com.serenitydojo.cashback_rewards.application.port.out.MerchantRepository;
-import com.serenitydojo.cashback_rewards.domain.model.CashbackRate;
 import com.serenitydojo.cashback_rewards.domain.model.Merchant;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +14,7 @@ public class RegisterMerchantService implements RegisterMerchantUseCase {
         this.merchants = merchants;
     }
 
-    public long register(CashbackRate cashbackRate) {
-        return merchants.save(new Merchant(cashbackRate));
+    public long register(boolean partner) {
+        return merchants.save(new Merchant(partner));
     }
 }
